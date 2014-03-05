@@ -15,4 +15,11 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    cardreader.cpp
+
+
+QMAKE_CXXFLAGS += --std=c++11
+
+HEADERS += \
+    cardreader.h

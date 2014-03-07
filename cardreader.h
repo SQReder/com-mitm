@@ -20,6 +20,7 @@ public:
 
     void PrintAvaliablePorts();
     void SelectComByNumber(int number);
+    const QSerialPortInfo& GetComInfoByNumber(int number);
 
     bool Open();
     void Close();

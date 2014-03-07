@@ -47,6 +47,17 @@ void CardReader::SelectComByNumber(int number)
         qCritical() << "There is no port COM" << number  << "!";
 }
 
+const QSerialPortInfo &CardReader::GetComInfoByNumber(int number)
+{
+    QString name("COM");
+    name = name + QString::number(number).simplified();
+    if (avaliablePortsInfo.contains(name)) {
+        return avaliablePortsInfo[name];
+    }
+    else
+        throw;
+}
+
 /**
  * @brief CardReader::Open
  * @return true if port has benn opened successfully else false
@@ -54,11 +65,13 @@ void CardReader::SelectComByNumber(int number)
 bool CardReader::Open()
 {
     if (!serial.open(QIODevice::ReadWrite)) {
-        serial.setBaudRate(QSerialPort::Baud9600, QSerialPort::AllDirections);
         qDebug() << "Can't open port " << serial.portName();
         qDebug() << "Error is " << serial.errorString();
         return false;
     }
+    serial.setBaudRate(QSerialPort::Baud9600, QSerialPort::AllDirections);
+    serial.setFlowControl(QSerialPort::NoFlowControl);
+
     return true;
 }
 
@@ -79,11 +92,16 @@ QByteArray CardReader::readCode()
                 toAdd = true;
                 continue;
             }
-            if (byte.toHex() == "0d")
+            if (byte.toHex() == "03")
                 break;
             if (toAdd)
                 buff.append(byte);
+        } else {
+            QTextStream  cout(stdout);
+            cout << ".";
+            cout.flush();
         }
     }
+    qDebug() << buff;
     return buff;
 }

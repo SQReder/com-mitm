@@ -1,12 +1,15 @@
 #include <QCoreApplication>
 #include <QDebug>
+#include <QThread>
 #include <windows.h>
 #include "cardreader.h"
+#include "codereader.h"
 
 QT_USE_NAMESPACE
 
 QSerialPort out;
 CardReader reader;
+CodeReader *bufferedReader;
 
 BOOL CtrlHandler( DWORD fdwCtrlType )
 {
@@ -23,6 +26,7 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
         out.close();
         reader.Close();
         printf("\n\nOpened ports closed\nNow exit\n");
+        QThread::sleep(1);
       return false;
     default:
       return FALSE;
@@ -35,8 +39,8 @@ QByteArray ProcessCode(QByteArray code) {
     auto ok = false;
     int number = code.simplified().toInt(&ok);
 
-    qDebug() << " " << number;
-    qDebug() << ok;
+//    qDebug() << " " << number;
+//    qDebug() << ok;
 
     int low = number & 0x0000ffff;
     int high = (number & 0x00ff0000) >> 16;
@@ -45,7 +49,7 @@ QByteArray ProcessCode(QByteArray code) {
     result.append(QString::number(high))
           .append(",")
           .append(QString::number(low));
-    cout << "Converted to: " << result << endl;
+    cout << "Converted to:  " << result << endl;
     result.prepend("Em-Marine[1901] ");
     result.append(10).append(13);
 
@@ -89,8 +93,21 @@ int main(int argc, char *argv[])
     if (ok)
         outputPort = in;
 
-    reader.SelectComByNumber(inputPort);
-    reader.Open();
+//    reader.SelectComByNumber(inputPort);
+//    reader.Open();
+
+    auto buffer = QSharedPointer<QList<QByteArray>>(new QList<QByteArray>());
+
+    bufferedReader = new CodeReader(inputPort, buffer);
+    QThread *thread = new QThread();
+    bufferedReader->moveToThread(thread);
+    QObject::connect( thread, SIGNAL(started()), bufferedReader, SLOT(doWork()) );
+    QObject::connect( bufferedReader, SIGNAL(workFinished()), thread, SLOT(quit()) );
+    //automatically delete thread and task object when work is done:
+    QObject::connect( thread, SIGNAL(finished()), bufferedReader, SLOT(deleteLater()) );
+    QObject::connect( thread, SIGNAL(finished()), thread, SLOT(deleteLater()) );
+    thread->start();
+
 
     try {
         auto serialInfo = reader.GetComInfoByNumber(outputPort);
@@ -113,20 +130,27 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-
     try {
+        qDebug() << "Start reading code" << bufferedReader;
         forever {
-            auto code = reader.readCode();
-            cout << "Got code    : " << code << endl;
+            if (buffer->isEmpty()) {
+                QThread::msleep(1);
+                continue;
+            }
+
+            auto code = buffer->takeFirst();
+            qDebug();
+            qDebug() << "Got code    : " << code;
 
             auto result = ProcessCode(code);
-            qDebug() << result;
+//            qDebug() << result;
             auto written = out.write(result.data(), result.length());
             out.waitForBytesWritten(-1);
             qDebug() << "Written " << written;
+            qDebug();
         }
     } catch (std::exception &e) {
-        qDebug() << e.what();
+        qDebug() << "Cough exception: " << e.what();
     } catch (...) {
         qDebug() << "\n\nUNKNOWN FATAL ERROR\n\n";
     }

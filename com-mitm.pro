@@ -16,10 +16,12 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    cardreader.cpp
+    cardreader.cpp \
+    codereader.cpp
 
 
 QMAKE_CXXFLAGS += --std=c++11
 
 HEADERS += \
-    cardreader.h
+    cardreader.h \
+    codereader.h

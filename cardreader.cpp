@@ -86,7 +86,7 @@ QByteArray CardReader::readCode()
     QByteArray buff;
     bool toAdd = false;
     forever {
-        if(serial.waitForReadyRead(-1)) {
+        if(serial.waitForReadyRead(1000)) {
             auto byte = serial.read(1);
             if (byte.toHex() == "02") {
                 toAdd = true;

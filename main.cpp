@@ -33,6 +33,15 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
   }
 }
 
+QByteArray leadByZeros(QByteArray str, int toSize) {
+    if (str.length() != 3) {
+        int toAdd = toSize - str.length();
+        QByteArray prependZeros(toAdd, '0');
+        str.prepend(prependZeros);
+    }
+    return str;
+}
+
 
 QByteArray ProcessCode(QByteArray code) {
     QTextStream cout(stdout);
@@ -44,11 +53,13 @@ QByteArray ProcessCode(QByteArray code) {
 
     int low = number & 0x0000ffff;
     int high = (number & 0x00ff0000) >> 16;
+    auto strHigh = leadByZeros(QByteArray::number(high), 3);
+    auto strLow = leadByZeros(QByteArray::number(low), 5);
 
     QByteArray result;
-    result.append(QString::number(high))
+    result.append(strHigh)
           .append(",")
-          .append(QString::number(low));
+          .append(strLow);
     cout << "Converted to:  " << result << endl;
     result.prepend("Em-Marine[1901] ");
     result.append(10).append(13);

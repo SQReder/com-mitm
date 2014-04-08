@@ -9,7 +9,7 @@ QT       += core serialport
 QT       -= gui
 
 TARGET = com-mitm
-CONFIG   += console
+CONFIG   += console c++11
 CONFIG   -= app_bundle
 
 TEMPLATE = app
@@ -19,8 +19,6 @@ SOURCES += main.cpp \
     cardreader.cpp \
     codereader.cpp
 
-
-QMAKE_CXXFLAGS += --std=c++11
 
 HEADERS += \
     cardreader.h \
